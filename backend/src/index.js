@@ -71,6 +71,12 @@ app.use('/api/gap-no-third-party-risk-aggregation-feeds-pci-certifications', req
 app.use('/api/gap-no-webhooks-for-alert-delivery', require('./routes/gapNoWebhooksForAlertDelivery'));
 app.use('/api/gap-no-e-signature-workflow-for-contract-obligations', require('./routes/gapNoESignatureWorkflowForContractObligations'));
 
+// Custom Views (mounted BEFORE any 404 handler)
+app.use('/api/custom-views', require('./routes/customViews'));
+
+// 404 handler for unknown /api routes
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
 });
