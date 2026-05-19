@@ -220,4 +220,225 @@ Provide:
   }
 });
 
+// AI Bankruptcy / Financial-Distress Prediction
+router.post('/bankruptcy-prediction', authMiddleware, async (req, res) => {
+  try {
+    const { supplier_id } = req.body;
+    const supplier = await pool.query('SELECT * FROM suppliers WHERE id = $1', [supplier_id]);
+    if (supplier.rows.length === 0) return res.status(404).json({ error: 'Supplier not found' });
+    const s = supplier.rows[0];
+
+    const prompt = `Estimate the financial-distress / bankruptcy probability over the next 12 months for this supplier and explain the drivers:
+Name: ${s.name}
+Country: ${s.country}
+Industry: ${s.industry}
+Revenue: $${s.revenue}M
+Credit Rating: ${s.credit_rating}
+Stock Symbol: ${s.stock_symbol}
+Current Health Score: ${s.financial_health_score}/100
+Risk Level: ${s.risk_level}
+
+Provide:
+1. Distress probability (0-100%)
+2. Altman-Z-style narrative (qualitative)
+3. Top warning signals
+4. Mitigating factors
+5. Recommended buyer actions (e.g., increase deposit, dual-source, shorten payment terms)
+Format as a structured report.`;
+
+    const systemPrompt = 'You are a credit risk analyst specializing in supplier financial distress. Be specific and quantitative where possible.';
+    const analysis = await callOpenRouter(prompt, systemPrompt);
+    res.json({ analysis, supplier: s });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// AI Supply-Chain-Network Risk Analysis (single point of failure detection)
+router.post('/network-risk', authMiddleware, async (req, res) => {
+  try {
+    const { supplier_id, dependent_skus, alternate_suppliers } = req.body;
+    const supplier = await pool.query('SELECT * FROM suppliers WHERE id = $1', [supplier_id]);
+    if (supplier.rows.length === 0) return res.status(404).json({ error: 'Supplier not found' });
+    const s = supplier.rows[0];
+    const spend = await pool.query('SELECT COALESCE(SUM(amount),0) as total FROM spend_analysis WHERE supplier_id = $1', [supplier_id]).catch(() => ({ rows: [{ total: 0 }] }));
+
+    const prompt = `Analyze supply-chain network exposure for "${s.name}".
+Country: ${s.country}
+Industry: ${s.industry}
+Annual spend: $${spend.rows[0].total}
+Dependent SKUs / categories: ${JSON.stringify(dependent_skus || [])}
+Known alternate suppliers: ${JSON.stringify(alternate_suppliers || [])}
+
+Identify:
+1. Single-point-of-failure risk score (0-100)
+2. Cascading impact scenarios
+3. Geographic concentration risk
+4. Recommended diversification actions
+5. Estimated time-to-recover if this supplier fails
+Return a structured analyst-style report.`;
+
+    const systemPrompt = 'You are a supply chain network risk analyst. Focus on concentration risk and contingency planning.';
+    const analysis = await callOpenRouter(prompt, systemPrompt);
+    res.json({ analysis, supplier: s });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// AI Supplier Consolidation Recommender
+router.post('/consolidation-recommendation', authMiddleware, async (req, res) => {
+  try {
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(503).json({ error: 'AI service not configured (missing OPENROUTER_API_KEY)' });
+    }
+    const { category, country, top_n } = req.body || {};
+    const limit = Math.max(2, Math.min(50, parseInt(top_n) || 25));
+
+    let q = 'SELECT id, name, country, industry, financial_health_score, risk_level, credit_rating FROM suppliers';
+    const params = [];
+    const where = [];
+    if (category) { params.push(category); where.push(`industry = $${params.length}`); }
+    if (country) { params.push(country); where.push(`country = $${params.length}`); }
+    if (where.length) q += ' WHERE ' + where.join(' AND ');
+    params.push(limit);
+    q += ` ORDER BY id LIMIT $${params.length}`;
+
+    const suppliers = await pool.query(q, params);
+    if (suppliers.rows.length < 2) {
+      return res.status(404).json({ error: 'Need at least 2 suppliers for consolidation analysis', count: suppliers.rows.length });
+    }
+
+    const spendRows = await pool.query(
+      'SELECT supplier_id, COALESCE(SUM(amount),0)::float AS total_spend FROM spend_analysis WHERE supplier_id = ANY($1::int[]) GROUP BY supplier_id',
+      [suppliers.rows.map(s => s.id)]
+    ).catch(() => ({ rows: [] }));
+    const spendMap = Object.fromEntries(spendRows.rows.map(r => [r.supplier_id, r.total_spend]));
+
+    const enriched = suppliers.rows.map(s => ({
+      id: s.id,
+      name: s.name,
+      country: s.country,
+      industry: s.industry,
+      financial_health_score: s.financial_health_score,
+      risk_level: s.risk_level,
+      credit_rating: s.credit_rating,
+      annual_spend: spendMap[s.id] || 0,
+    }));
+
+    const prompt = `Recommend supplier consolidation opportunities across this set.
+Filters: category=${category || 'any'}, country=${country || 'any'}.
+Suppliers (with risk/performance/spend):
+${JSON.stringify(enriched, null, 2)}
+
+For each consolidation opportunity:
+- Identify 2-4 suppliers to consolidate
+- Pick a recommended primary (the keep)
+- Estimate annualized savings (rough %)
+- Note risk impact (positive or negative)
+- Provide rationale
+
+Return a structured analyst report including a "summary_metrics" section (total_estimated_savings_pct, supplier_count_reduction).`;
+
+    const analysis = await callOpenRouter(prompt, 'You are a strategic sourcing analyst. Quantify trade-offs between consolidation savings and concentration risk.');
+    res.json({ analysis, supplier_count: enriched.length, filters: { category: category || null, country: country || null } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// AI ESG Controversy Watch (over existing supplier data)
+router.post('/esg-controversy-watch', authMiddleware, async (req, res) => {
+  try {
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(503).json({ error: 'AI service not configured (missing OPENROUTER_API_KEY)' });
+    }
+    const { supplier_id, recent_signals } = req.body || {};
+    if (!supplier_id) return res.status(400).json({ error: 'supplier_id is required' });
+
+    const supRes = await pool.query('SELECT * FROM suppliers WHERE id = $1', [supplier_id]);
+    if (supRes.rows.length === 0) return res.status(404).json({ error: 'Supplier not found' });
+    const s = supRes.rows[0];
+
+    const esgRes = await pool.query('SELECT * FROM esg_compliance WHERE supplier_id = $1 ORDER BY id DESC LIMIT 10', [supplier_id]).catch(() => ({ rows: [] }));
+    const alertsRes = await pool.query('SELECT * FROM risk_alerts WHERE supplier_id = $1 ORDER BY id DESC LIMIT 10', [supplier_id]).catch(() => ({ rows: [] }));
+
+    const prompt = `Assess ESG controversy exposure for the supplier below.
+Supplier: ${JSON.stringify({ id: s.id, name: s.name, country: s.country, industry: s.industry, risk_level: s.risk_level, financial_health_score: s.financial_health_score })}
+Recent ESG records: ${JSON.stringify(esgRes.rows)}
+Recent alerts: ${JSON.stringify(alertsRes.rows)}
+User-supplied signals (may be empty): ${JSON.stringify(recent_signals || [])}
+
+Identify:
+1. Likely controversy categories (environmental, labor, governance, social).
+2. Severity score (0-100) and trend (rising/stable/declining).
+3. Specific issues to monitor proactively.
+4. Suggested questionnaire items to send the supplier.
+5. Recommended internal escalation level.
+Return a structured analyst-style report.`;
+
+    const analysis = await callOpenRouter(prompt, 'You are an ESG risk analyst with experience in controversy monitoring and supplier engagement.');
+    res.json({ analysis, supplier: s });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// AI Risk-Adjusted Pricing Leverage
+// PRODUCT-DECISION: This endpoint is *advisory* — it suggests a percentage discount/markup
+// adjustment based on the supplier's risk + spend profile, NOT a contract change. Real
+// negotiation would require approval workflow + contract templates. Multiplier is bounded
+// to [-30%, +20%] to prevent unrealistic recommendations.
+// Required env: OPENROUTER_API_KEY (returns 503 if missing).
+router.post('/risk-adjusted-pricing', authMiddleware, async (req, res) => {
+  try {
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(503).json({ error: 'AI service not configured', missing: 'OPENROUTER_API_KEY' });
+    }
+    const { supplier_id, current_unit_price, category, annual_spend } = req.body || {};
+    if (!supplier_id) return res.status(400).json({ error: 'supplier_id is required' });
+    const supRes = await pool.query('SELECT * FROM suppliers WHERE id = $1', [supplier_id]);
+    if (supRes.rows.length === 0) return res.status(404).json({ error: 'Supplier not found' });
+    const s = supRes.rows[0];
+
+    const spend = await pool.query('SELECT * FROM spend_analysis WHERE supplier_id = $1 ORDER BY id DESC LIMIT 5', [supplier_id]).catch(() => ({ rows: [] }));
+    const alerts = await pool.query('SELECT * FROM risk_alerts WHERE supplier_id = $1 ORDER BY id DESC LIMIT 10', [supplier_id]).catch(() => ({ rows: [] }));
+    const delivery = await pool.query('SELECT * FROM delivery_performance WHERE supplier_id = $1 ORDER BY actual_date DESC LIMIT 10', [supplier_id]).catch(() => ({ rows: [] }));
+
+    const prompt = `You are a strategic sourcing analyst. Recommend a risk-adjusted pricing position
+for an upcoming contract negotiation. Constrain pct_adjustment to [-30, +20]. Return ONLY strict JSON:
+{
+  "pct_adjustment": <number, negative=discount we should ask for, positive=premium we should accept>,
+  "leverage_score": <0-100>,
+  "leverage_signals": [{ "signal": string, "direction": "favors_buyer|favors_supplier", "weight": <0-1> }],
+  "recommended_position": string,
+  "fallback_position": string,
+  "risks_of_pushing_too_hard": [string],
+  "confidence": "low|medium|high",
+  "summary": string
+}
+
+Supplier: ${JSON.stringify({ id: s.id, name: s.name, country: s.country, industry: s.industry, risk_level: s.risk_level, financial_health_score: s.financial_health_score, credit_rating: s.credit_rating })}
+Category: ${category || 'unspecified'}
+Current unit price: ${current_unit_price ?? 'unspecified'}
+Annual spend: ${annual_spend ?? 'unspecified'}
+Spend snapshots: ${JSON.stringify(spend.rows)}
+Recent alerts: ${JSON.stringify(alerts.rows)}
+Recent delivery: ${JSON.stringify(delivery.rows)}`;
+
+    const raw = await callOpenRouter(prompt, 'You are a strategic sourcing analyst. Return only strict JSON.');
+    let parsed = null;
+    try { parsed = JSON.parse(raw); } catch {
+      const m = raw.match(/\{[\s\S]*\}/);
+      if (m) { try { parsed = JSON.parse(m[0]); } catch {} }
+    }
+    if (parsed && typeof parsed.pct_adjustment === 'number') {
+      parsed.pct_adjustment = Math.max(-30, Math.min(20, parsed.pct_adjustment));
+    }
+    res.json({ analysis: parsed || raw, raw, supplier: s });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

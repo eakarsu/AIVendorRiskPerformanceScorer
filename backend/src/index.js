@@ -58,6 +58,25 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.use('/api/financial-distress', require('./routes/financialDistress')); app.use('/api/supply-chain-network-risk', require('./routes/supplyChainNetworkRisk')); app.use('/api/esg-controversy-monitor', require('./routes/esgControversyMonitor')); app.use('/api/supplier-consolidation-engine', require('./routes/supplierConsolidationEngine')); app.use('/api/risk-adjusted-pricing', require('./routes/riskAdjustedPricing')); app.use('/api/n-tier-supply-mapping', require('./routes/nTierSupplyMapping'));
+
+// === Batch 08 Gaps & Frontend Mounts ===
+app.use('/api/gap-no-predictive-bankruptcy-scoring', require('./routes/gapNoPredictiveBankruptcyScoring'));
+app.use('/api/gap-no-supply-chain-network-n-tier-risk-analysis-ai', require('./routes/gapNoSupplyChainNetworkNTierRiskAnalysisAi'));
+app.use('/api/gap-no-esg-controversy-news-scanner-ai', require('./routes/gapNoEsgControversyNewsScannerAi'));
+app.use('/api/gap-no-integration-with-dun-bradstreet-or-financial-data', require('./routes/gapNoIntegrationWithDunBradstreetOrFinancialData'));
+app.use('/api/gap-no-supplier-onboarding-workflow-with-automated-document-collection', require('./routes/gapNoSupplierOnboardingWorkflowWithAutomatedDocumentCollection'));
+app.use('/api/gap-no-supplier-portal-for-self-service-compliance-updates', require('./routes/gapNoSupplierPortalForSelfServiceComplianceUpdates'));
+app.use('/api/gap-no-third-party-risk-aggregation-feeds-pci-certifications', require('./routes/gapNoThirdPartyRiskAggregationFeedsPciCertifications'));
+app.use('/api/gap-no-webhooks-for-alert-delivery', require('./routes/gapNoWebhooksForAlertDelivery'));
+app.use('/api/gap-no-e-signature-workflow-for-contract-obligations', require('./routes/gapNoESignatureWorkflowForContractObligations'));
+
+// Custom Views (mounted BEFORE any 404 handler)
+app.use('/api/custom-views', require('./routes/customViews'));
+
+// 404 handler for unknown /api routes
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
 });
