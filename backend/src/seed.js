@@ -10,6 +10,12 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'postgres',
 });
 
+function requireDemoPassword() {
+  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD || '';
+  if (password.length < 12 || password.length > 1024) throw new Error('DEMO_PASSWORD must contain 12-1024 characters');
+  return password;
+}
+
 async function seed() {
   console.log('Creating tables...');
 
@@ -232,7 +238,7 @@ async function seed() {
   console.log('Tables created. Seeding data...');
 
   // Seed users
-  const hash = await bcrypt.hash('password123', 10);
+  const hash = await bcrypt.hash(requireDemoPassword(), 10);
   await pool.query(`
     INSERT INTO users (name, email, password_hash, role) VALUES
     ('Admin User', 'admin@vendorrisk.com', $1, 'admin'),
@@ -510,7 +516,7 @@ async function seed() {
   `);
 
   console.log('Seed data inserted successfully!');
-  console.log('Default login: admin@vendorrisk.com / password123');
+  console.log('Demo login users provisioned from the local environment.');
   await pool.end();
 }
 
