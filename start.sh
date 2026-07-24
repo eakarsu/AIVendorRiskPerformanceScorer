@@ -14,10 +14,7 @@ if [ ! -d backend/node_modules ]; then echo "Backend dependencies missing; run s
 for port in "$BACKEND_PORT" "$FRONTEND_PORT"; do if command -v lsof >/dev/null && lsof -ti ":$port" >/dev/null 2>&1; then echo "Port $port is already in use." >&2; exit 1; fi; done
 (cd backend && BACKEND_PORT="$BACKEND_PORT" node src/index.js) & BACKEND_PID=$!
 FRONTEND_PID=''
-if [ -x web/node_modules/.bin/react-scripts ]; then
-  (cd web && PORT="$FRONTEND_PORT" REACT_APP_API_URL="http://127.0.0.1:$BACKEND_PORT" BROWSER=none npm start) & FRONTEND_PID=$!
-else
-  echo "Frontend dependencies are not installed; starting the API only."
-fi
+if [ ! -x web/node_modules/.bin/react-scripts ]; then echo "Frontend dependencies missing; install them explicitly before starting." >&2; exit 1; fi
+(cd web && PORT="$FRONTEND_PORT" REACT_APP_API_URL="http://127.0.0.1:$BACKEND_PORT" BROWSER=none npm start) & FRONTEND_PID=$!
 cleanup() { [ -z "$FRONTEND_PID" ] || kill "$FRONTEND_PID" 2>/dev/null || true; kill "$BACKEND_PID" 2>/dev/null || true; }; trap cleanup EXIT INT TERM
 wait

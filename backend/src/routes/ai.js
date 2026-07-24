@@ -4,6 +4,24 @@ const pool = require('../db');
 const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 
+async function persistResult(userId, endpoint, inputData, resultText) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ai_results (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT,
+      endpoint TEXT NOT NULL,
+      input_data JSONB NOT NULL DEFAULT '{}',
+      result_text TEXT NOT NULL,
+      model_used TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+  await pool.query(
+    'INSERT INTO ai_results(user_id,endpoint,input_data,result_text,model_used) VALUES($1,$2,$3,$4,$5)',
+    [userId, endpoint, inputData || {}, resultText, process.env.OPENROUTER_MODEL]
+  );
+}
+
 const callOpenRouter = async (prompt, systemPrompt) => {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -58,6 +76,7 @@ Format the response with clear sections and bullet points.`;
 
     const systemPrompt = 'You are an expert financial analyst specializing in vendor risk assessment and supply chain finance. Provide detailed, actionable analysis.';
     const analysis = await callOpenRouter(prompt, systemPrompt);
+    await persistResult(req.user.id, 'financial-analysis', { supplier_id }, analysis);
     res.json({ analysis, supplier: s });
   } catch (err) {
     res.status(500).json({ error: err.message });
