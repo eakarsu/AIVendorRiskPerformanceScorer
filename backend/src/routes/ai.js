@@ -46,6 +46,20 @@ const callOpenRouter = async (prompt, systemPrompt) => {
   return data.choices[0].message.content;
 };
 
+// Read saved reports without creating or modifying the results table.
+router.get('/history', authMiddleware, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, endpoint, input_data, result_text, model_used, created_at FROM ai_results WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50',
+      [req.user.id]
+    );
+    res.json({ history: rows });
+  } catch (error) {
+    if (error.code === '42P01') return res.json({ history: [] });
+    res.status(500).json({ error: 'Saved AI reports could not be loaded' });
+  }
+});
+
 // AI Financial Health Analysis
 router.post('/financial-analysis', authMiddleware, async (req, res) => {
   try {

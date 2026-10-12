@@ -1,0 +1,340 @@
+{
+  "title": "Vendor Risk Performance Scorer",
+  "features": [
+    {
+      "id": "ai-financial-analysis",
+      "endpoint": "/api/ai/financial-analysis",
+      "title": "Financial analysis",
+      "description": "Review native inputs and source evidence before generating. Examples are illustrative and require your review.",
+      "fields": [
+        {
+          "key": "supplier_id",
+          "type": "text",
+          "required": true,
+          "label": "Supplier id",
+          "manual": true,
+          "resource": "suppliers"
+        }
+      ],
+      "source": {
+        "file": "backend/src/routes/ai.js",
+        "line": 50
+      }
+    },
+    {
+      "id": "ai-delivery-analysis",
+      "endpoint": "/api/ai/delivery-analysis",
+      "title": "Delivery analysis",
+      "description": "Review native inputs and source evidence before generating. Examples are illustrative and require your review.",
+      "fields": [
+        {
+          "key": "supplier_id",
+          "type": "text",
+          "required": true,
+          "label": "Supplier id",
+          "manual": true,
+          "resource": "suppliers"
+        }
+      ],
+      "source": {
+        "file": "backend/src/routes/ai.js",
+        "line": 87
+      }
+    },
+    {
+      "id": "ai-geopolitical-analysis",
+      "endpoint": "/api/ai/geopolitical-analysis",
+      "title": "Geopolitical analysis",
+      "description": "Review native inputs and source evidence before generating. Examples are illustrative and require your review.",
+      "fields": [
+        {
+          "key": "supplier_id",
+          "type": "text",
+          "required": true,
+          "label": "Supplier id",
+          "manual": true,
+          "resource": "suppliers"
+        }
+      ],
+      "source": {
+        "file": "backend/src/routes/ai.js",
+        "line": 130
+      }
+    },
+    {
+      "id": "ai-esg-analysis",
+      "endpoint": "/api/ai/esg-analysis",
+      "title": "Esg analysis",
+      "description": "Review native inputs and source evidence before generating. Examples are illustrative and require your review.",
+      "fields": [
+        {
+          "key": "supplier_id",
+          "type": "text",
+          "required": true,
+          "label": "Supplier id",
+          "manual": true,
+          "resource": "suppliers"
+        }
+      ],
+      "source": {
+        "file": "backend/src/routes/ai.js",
+        "line": 168
+      }
+    },
+    {
+      "id": "ai-comprehensive-risk",
+      "endpoint": "/api/ai/comprehensive-risk",
+      "title": "Comprehensive risk",
+      "description": "Review native inputs and source evidence before generating. Examples are illustrative and require your review.",
+      "fields": [
+        {
+          "key": "supplier_id",
+          "type": "text",
+          "required": true,
+          "label": "Supplier id",
+          "manual": true,
+          "resource": "suppliers"
+        }
+      ],
+      "source": {
+        "file": "backend/src/routes/ai.js",
+        "line": 207
+      }
+    },
+    {
+      "id": "ai-bankruptcy-prediction",
+      "endpoint": "/api/ai/bankruptcy-prediction",
+      "title": "Bankruptcy prediction",
+      "description": "Review native inputs and source evidence before generating. Examples are illustrative and require your review.",
+      "fields": [
+        {
+          "key": "supplier_id",
+          "type": "text",
+          "required": true,
+          "label": "Supplier id",
+          "manual": true,
+          "resource": "suppliers"
+        }
+      ],
+      "source": {
+        "file": "backend/src/routes/ai.js",
+        "line": 243
+      }
+    },
+    {
+      "id": "ai-network-risk",
+      "endpoint": "/api/ai/network-risk",
+      "title": "Network risk",
+      "description": "Review native inputs and source evidence before generating. Examples are illustrative and require your review.",
+      "fields": [
+        {
+          "key": "supplier_id",
+          "type": "text",
+          "required": true,
+          "label": "Supplier id",
+          "manual": true,
+          "resource": "suppliers"
+        },
+        {
+          "key": "dependent_skus",
+          "type": "json",
+          "required": false,
+          "label": "Dependent skus",
+          "presets": [
+            [
+              "Critical packaging"
+            ],
+            [
+              "Critical packaging",
+              "Electronic controls"
+            ],
+            [
+              "Electronic controls",
+              "Safety components",
+              "Specialty materials"
+            ]
+          ],
+          "manual": false
+        },
+        {
+          "key": "alternate_suppliers",
+          "type": "json",
+          "required": false,
+          "label": "Alternate suppliers",
+          "manual": true
+        }
+      ],
+      "source": {
+        "file": "backend/src/routes/ai.js",
+        "line": 277
+      }
+    },
+    {
+      "id": "ai-consolidation-recommendation",
+      "endpoint": "/api/ai/consolidation-recommendation",
+      "title": "Consolidation recommendation",
+      "description": "Review native inputs and source evidence before generating. Examples are illustrative and require your review.",
+      "fields": [
+        {
+          "key": "category",
+          "type": "text",
+          "required": false,
+          "label": "Category",
+          "presets": [
+            "Industrial components",
+            "Packaging",
+            "Logistics"
+          ],
+          "manual": false
+        },
+        {
+          "key": "country",
+          "type": "text",
+          "required": false,
+          "label": "Country",
+          "presets": [
+            "United States",
+            "Germany",
+            "Mexico"
+          ],
+          "manual": false
+        },
+        {
+          "key": "top_n",
+          "type": "number",
+          "required": false,
+          "label": "Top n",
+          "presets": [
+            5,
+            10,
+            25
+          ],
+          "manual": false
+        }
+      ],
+      "source": {
+        "file": "backend/src/routes/ai.js",
+        "line": 309
+      }
+    },
+    {
+      "id": "ai-esg-controversy-watch",
+      "endpoint": "/api/ai/esg-controversy-watch",
+      "title": "Esg controversy watch",
+      "description": "Review native inputs and source evidence before generating. Examples are illustrative and require your review.",
+      "fields": [
+        {
+          "key": "supplier_id",
+          "type": "text",
+          "required": true,
+          "label": "Supplier id",
+          "manual": true,
+          "resource": "suppliers"
+        },
+        {
+          "key": "recent_signals",
+          "type": "text",
+          "required": false,
+          "label": "Recent signals",
+          "presets": [
+            "Illustrative: monitor recent labor, environmental, and regulatory news; confirm sources before use.",
+            "Illustrative: review two recent allegations and supplier responses; source verification pending.",
+            "Illustrative: compare recent public reports, remediation evidence, and unresolved claims; validate each source."
+          ],
+          "manual": false
+        }
+      ],
+      "source": {
+        "file": "backend/src/routes/ai.js",
+        "line": 370
+      }
+    },
+    {
+      "id": "ai-risk-adjusted-pricing",
+      "endpoint": "/api/ai/risk-adjusted-pricing",
+      "title": "Risk adjusted pricing",
+      "description": "Review native inputs and source evidence before generating. Examples are illustrative and require your review.",
+      "fields": [
+        {
+          "key": "supplier_id",
+          "type": "text",
+          "required": true,
+          "label": "Supplier id",
+          "manual": true,
+          "resource": "suppliers"
+        },
+        {
+          "key": "current_unit_price",
+          "type": "number",
+          "required": false,
+          "label": "Current unit price",
+          "presets": [
+            25,
+            31,
+            38
+          ],
+          "manual": false
+        },
+        {
+          "key": "category",
+          "type": "text",
+          "required": false,
+          "label": "Category",
+          "presets": [
+            "Industrial components",
+            "Packaging",
+            "Logistics"
+          ],
+          "manual": false
+        },
+        {
+          "key": "annual_spend",
+          "type": "number",
+          "required": false,
+          "label": "Annual spend",
+          "presets": [
+            50000,
+            250000,
+            1000000
+          ],
+          "manual": false
+        }
+      ],
+      "source": {
+        "file": "backend/src/routes/ai.js",
+        "line": 412
+      }
+    }
+  ],
+  "resources": [
+    {
+      "key": "suppliers",
+      "endpoint": "/api/suppliers",
+      "label": "Suppliers",
+      "fields": [
+        "name",
+        "country",
+        "industry",
+        "revenue",
+        "credit_rating",
+        "stock_symbol",
+        "financial_health_score",
+        "risk_level",
+        "notes"
+      ],
+      "updateFields": [
+        "name",
+        "country",
+        "industry",
+        "revenue",
+        "credit_rating",
+        "stock_symbol",
+        "financial_health_score",
+        "risk_level",
+        "notes"
+      ],
+      "delete": true,
+      "source": "backend/src/routes/suppliers.js"
+    }
+  ]
+}
